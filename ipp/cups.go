@@ -47,7 +47,7 @@ func (c *CupsServer) GetPrinterAttributes() {
 	m := c.CreateRequest(GET_PRINTER_ATTRIBUTES)
 	m.AddAttribute(TAG_CHARSET, "attributes-charset", charset("utf-8"))
 	m.AddAttribute(TAG_LANGUAGE, "attributes-natural-language", naturalLanguage("en-us"))
-	m.AddAttribute(TAG_URI, "printer-uri", uri("ipp://192.168.1.1:631/ipp/"))
+	m.AddAttribute(TAG_URI, "printer-uri", uri("ipp://"+c.uri+":631/printers/Canon_iP2700_series"))
 	
 	a := NewAttribute()
 	a.AddValue(TAG_KEYWORD, "requested-attributes", keyword("copies-supported"))
@@ -79,7 +79,7 @@ func (c *CupsServer) DoRequest(m Message) {
 	fii.Write(s.Bytes())
 	// "http://192.168.1.8:631/ipp/printer" "application/ipp"
 	
-	resp, err := http.Post("http://192.168.1.8:631/ipp/printer", "application/ipp", s)
+	resp, err := http.Post("http://"+c.uri+":631/ipp/printer", "application/ipp", s)
 	if err != nil {
 		fmt.Println("err: ",err)
 	}
