@@ -130,6 +130,11 @@ func (im *Message) AppendAttribute(attrib attribute) {
 	return
 }
 
+func (im *Message) GetRequestID() (int32) {
+
+	return im.requestId
+}
+
 func (im *Message) addAttribute(tag byte, name string, value interface{}) {
 	var attrib attribute
 	attrib.addValue(tag, name, value)
