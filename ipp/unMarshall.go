@@ -55,7 +55,9 @@ func ParseMessage(b []byte) (m Message, err error) {
 	m.majorVer = int8(i) //	version-number            	2 bytes  	- required
 	i, _ = binary.Varint(b[1:2])
 	m.minorVer = int8(i)
-	log.Println(b[1:2])
+	//log.Println(m)
+
+	//panic(1)
 
 	ii, _ := binary.Uvarint(b[3:4])
 	m.operationIdStatusCode = uint16(ii) //	operation-id (request)		2 bytes  	- required
@@ -64,8 +66,9 @@ func ParseMessage(b []byte) (m Message, err error) {
 	iii, _ := binary.Varint(b[4:8]) //	request-id 					4 bytes  	- required	
 	m.requestId = int32(iii)
 	//et := bytes.IndexByte(b[8:], TAG_END)
+	log.Println("message:", m)
+	ags := splitAValues(b[8:]) //et+9]) //	attribute-group				n bytes 	- 0 or more
 
-	ags := splitAValues(b[8 : ]) //et+9]) //	attribute-group				n bytes 	- 0 or more
 	m.attributeGroups = ags
 
 	// m.endAttributeTag = b[et] //	end-of-attributes-tag		1 byte   	- required
@@ -77,6 +80,8 @@ func ParseMessage(b []byte) (m Message, err error) {
 }
 
 func splitAValues(b []byte) (ags []attributeGroup) {
+	//log.Println(string(b))
+
 	util := utility.NewIterator(b)
 	var vTag byte
 	var name string
@@ -88,6 +93,8 @@ func splitAValues(b []byte) (ags []attributeGroup) {
 	if bt != 0x01 {
 		log.Println("malformed packet", bt) // if first byte is not operation-attributes-tag
 	}
+	//log.Println(bt)
+	//panic(1)
 	var ag attributeGroup
 	ag.beginAttributeGroupTag = bt
 	//   ----------------------------------------------------------
@@ -105,6 +112,11 @@ func splitAValues(b []byte) (ags []attributeGroup) {
 		util.DeBug()
 		vTag, err = util.GetNextOne() // get value tag
 		_, isDelimitter := checkGroupTag(vTag)
+
+		log.Println("Hiler Debug:",vTag)
+		if vTag == TAG_END {
+			continue
+		}
 		
 		// ================================= New Group vTag is a Delimitter ====================================
 		if isDelimitter {
@@ -175,6 +187,7 @@ func splitAValues(b []byte) (ags []attributeGroup) {
 				log.Println("182 util.GetNextN(int(vLength)) vLength: ", vLength)
 				break
 			}
+
 			av, _ := UnMarshallattribute(vTag, value) //returns attributeValue
 			av.name = name
 			av.nameLength = nLength
@@ -309,6 +322,13 @@ func UnMarshallattribute(bi byte, bts []byte) (attributeValue, error) {
 		a.Marshal = (func() ([]byte, error) { b := a.value.(nameWithLanguage); return b.MarshalIPP() })
 		a.UnMarshal = (func([]byte) error { b := a.value.(nameWithLanguage); return b.UnMarshalIPP(bts) })
 		a.Length = (func() uint16 { b := a.value.(nameWithLanguage); return b.length() })
+	case 0x42:
+		a.valueTag = TAG_NAME
+		a.valueTagStr = "TAG_NAME"
+		a.Marshal = (func() ([]byte, error) {b := a.value.(charset); return b.MarshalIPP()})
+		a.UnMarshal = (func(bts []byte) error {var b charset; b.UnMarshalIPP(bts); a.value = b; return nil})
+		a.Length = (func() uint16 {b := a.value.(charset); return uint16(b.len())})
+		a.String = (func() string {x := a.value.(charset); return x.String()})
 	case 0x47:
 		a.valueTag = TAG_CHARSET
 		a.valueTagStr = "TAG_CHARSET"

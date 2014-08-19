@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"net/http"
 	"io/ioutil"
+	"encoding/binary"
+	"bytes"
 )
 
 type CupsServer struct {
@@ -12,6 +14,23 @@ type CupsServer struct {
 	username       string
 	password       string
 	requestCounter int32
+}
+
+type Response_Header struct {
+	Version uint16
+	Status 	uint16
+	ReqID	uint32
+}
+
+type Attribute_Header struct {
+	Tag		uint8
+	Name 	uint16
+	Value 	uint16
+}
+
+type Attribute_Name_Length struct {
+	Tag		uint8
+	NameLen	uint16
 }
 
 func (c *CupsServer) SetServer(server string) {
@@ -32,14 +51,14 @@ func (c *CupsServer) CreateRequest(operationId uint16) Message {
  0x47             charset type                 value-tag
  */
 
-func (c *CupsServer) GetPrinters() {
+func (c *CupsServer) GetPrinters()(Message, error) {
 	m := c.CreateRequest(CUPS_GET_PRINTERS)
 	m.AddAttribute(TAG_CHARSET, "attributes-charset", charset("utf-8"))
 	m.AddAttribute(TAG_LANGUAGE, "attributes-natural-language", naturalLanguage("en-us"))
 	m.AddAttribute(TAG_KEYWORD, "requested-attributes", keyword("printer-name"))
 	m.AddAttribute(TAG_ENUM, "printer-type", enum(0))
 	m.AddAttribute(TAG_ENUM, "printer-type-mask", enum(1))
-	c.DoRequest(m)
+	return c.DoRequest(m)
 	
 }
 
@@ -71,9 +90,9 @@ func (c *CupsServer) PrintTestPage() {
 	
 }
 
-func (c *CupsServer) DoRequest(m Message) {
+func (c *CupsServer) DoRequest(m Message)(Message, error) {
 
-    fii, _ := os.Create("/Users/tmartino/aC")
+    fii, _ := os.Create("./printer/aC")
 	defer fii.Close()
 	s := m.marshallMsg()
 	fii.Write(s.Bytes())
@@ -88,10 +107,41 @@ func (c *CupsServer) DoRequest(m Message) {
 		fmt.Println("errr:   ", errr)
 	}
   fmt.Println("Response Body: ", string(body))
-  fmt.Println("Response Body bytes[]: ", body)
+  //fmt.Println("Response Body bytes[]: ", body)
   fmt.Println("End Tag: ", TAG_END)
   fmt.Println("Header: ", resp.Header)
+
+	/*****************************************/
+	var data_header = Response_Header{}
+	binary.Read(bytes.NewReader(body),binary.BigEndian,&data_header)
+	//fmt.Println("Response Header:", data_header)
+
+	var data_tag uint8
+	binary.Read(bytes.NewReader(body[8:]),binary.BigEndian,&data_tag)
+	//fmt.Println("Response Body tag:", data_tag)
+
+	var attrib_header = Attribute_Header{}
+	binary.Read(bytes.NewReader(body[8+1:]),binary.BigEndian,&attrib_header)
+	//fmt.Println("Attribute Header:", attrib_header)
+
+	var name_len = Attribute_Name_Length{}
+	binary.Read(bytes.NewReader(body[8+1+5:]),binary.BigEndian,&name_len)
+	//fmt.Println("Attribute Name Length:", name_len)
+
+	count := 8+1+5
+	for count < len(body) {
+		count = count + 3
+
+		binary.Read(bytes.NewReader(body[count:]),binary.BigEndian,&name_len)
+		//fmt.Println("Attribute Name Length:", name_len)
+	}
+
+
+
   x, eerr := ParseMessage(body)
+
   fmt.Println("Message: ", x.attributeGroups[1].attributes[0], len(x.attributeGroups[1].attributes[0].values), "eerr: ", eerr)
+
+	return x, eerr
 
 }
