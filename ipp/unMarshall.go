@@ -322,6 +322,13 @@ func UnMarshallattribute(bi byte, bts []byte) (attributeValue, error) {
 		a.Marshal = (func() ([]byte, error) { b := a.value.(nameWithLanguage); return b.MarshalIPP() })
 		a.UnMarshal = (func([]byte) error { b := a.value.(nameWithLanguage); return b.UnMarshalIPP(bts) })
 		a.Length = (func() uint16 { b := a.value.(nameWithLanguage); return b.length() })
+	case 0x41:
+		a.valueTag = TAG_TEXT
+		a.valueTagStr = "TAG_TEXT"
+		a.Marshal = (func() ([]byte, error) {b := a.value.(charset); return b.MarshalIPP()})
+		a.UnMarshal = (func(bts []byte) error {var b charset; b.UnMarshalIPP(bts); a.value = b; return nil})
+		a.Length = (func() uint16 {b := a.value.(charset); return uint16(b.len())})
+		a.String = (func() string {x := a.value.(charset); return x.String()})
 	case 0x42:
 		a.valueTag = TAG_NAME
 		a.valueTagStr = "TAG_NAME"
@@ -364,6 +371,7 @@ func UnMarshallattribute(bi byte, bts []byte) (attributeValue, error) {
 	
 	}
 
+	log.Println("Hiler Debug:", bts)
 	a.UnMarshal(bts)
 	return a, nil
 }
