@@ -86,6 +86,12 @@ func (c *CupsServer) PrintTestPage() {
 	m := c.CreateRequest(PAUSE_PRINTER)
 	m.AddAttribute(TAG_CHARSET, "attributes-charset", charset("utf-8"))
 	m.AddAttribute(TAG_LANGUAGE, "attributes-natural-language", naturalLanguage("en-us"))
+	m.AddAttribute(TAG_URI, "printer-uri", uri("ipp://"+c.uri+":631/printers/Canon_iP2700_series"))
+
+	name := octetString{}
+	name.name = []byte("hilerchen")
+	name.value = []byte("hilerchen")
+	m.AddAttribute(TAG_NAMELANG, "requesting-user-name", nameWithLanguage(name))
 	c.DoRequest(m)
 	
 }
@@ -132,15 +138,27 @@ func (c *CupsServer) DoRequest(m Message)(Message, error) {
 	for count < len(body) {
 		count = count + 3
 
-		binary.Read(bytes.NewReader(body[count:]),binary.BigEndian,&name_len)
+		//binary.Read(bytes.NewReader(body[count:]),binary.BigEndian,&name_len)
 		//fmt.Println("Attribute Name Length:", name_len)
 	}
 
 
 
-  x, eerr := ParseMessage(body)
+  	x, eerr := ParseMessage(body)
 
-  fmt.Println("Message: ", x.attributeGroups[1].attributes[0], len(x.attributeGroups[1].attributes[0].values), "eerr: ", eerr)
+
+
+	for _, ag := range x.attributeGroups {
+		for _, ab := range ag.attributes {
+			for _, val := range ab.values {
+				fmt.Println(val.name, "<->", val.valueTagStr, "<->", val.String())
+			}
+		}
+	}
+
+	//fmt.Println(x.attributeGroups[0].attributes[0].values)
+	//fmt.Println(x.attributeGroups[0].attributes[0].values[0].String())
+  	//fmt.Println("Message: ", x.attributeGroups[1].attributes[0], len(x.attributeGroups[1].attributes[0].values), "eerr: ", eerr)
 
 	return x, eerr
 
