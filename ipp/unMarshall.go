@@ -266,8 +266,15 @@ func checkGroupTag(b byte) (status string, err bool) {
 func UnMarshallattribute(bi byte, bts []byte) (attributeValue, error) {
 	var a attributeValue
 	a.value = bts
-	//log.Println("Hiler Debug UnMarshallattribute:", bi)
+	log.Println("Hiler Debug UnMarshallattribute:", bi)
 	switch bi {
+	case 0x13:
+		a.valueTag = TAG_NOVALUE // octetString with an  unspecified format
+		a.valueTagStr = "TAG_NOVALUE"
+		a.Marshal = (func() ([]byte, error) { b := a.value.(integer); return b.MarshalIPP() })
+		a.UnMarshal = (func(bts []byte) error { var b integer; b.UnMarshalIPP(bts); a.value = b; return nil})
+		a.Length = (func() uint16 {return uint16(1) })
+		a.String = (func() string {x := a.value.(integer); return x.String()})
 	case 0x21:
 		a.valueTag = TAG_INTEGER // integer
 		a.valueTagStr = "TAG_INTEGER"
