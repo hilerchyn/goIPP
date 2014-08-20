@@ -84,7 +84,7 @@ func (c *CupsServer) GetPrinterAttributes() {
 	m := c.CreateRequest(GET_PRINTER_ATTRIBUTES)
 	m.AddAttribute(TAG_CHARSET, "attributes-charset", charset("utf-8"))
 	m.AddAttribute(TAG_LANGUAGE, "attributes-natural-language", naturalLanguage("en-us"))
-	m.AddAttribute(TAG_URI, "printer-uri", uri("ipp://"+c.uri+":631/printers/Canon_iP2700_series"))
+	m.AddAttribute(TAG_URI, "printer-uri", uri("ipp://"+c.uri+":631/printers/"+c.printername))
 	
 	a := NewAttribute()
 	a.AddValue(TAG_KEYWORD, "requested-attributes", keyword("copies-supported"))
@@ -102,6 +102,7 @@ func (c *CupsServer) GetPrinterAttributes() {
 
 func (c *CupsServer) PrintTestPage(data []byte) {
 	m := c.CreateRequest(PRINT_JOB)
+	//GET_JOB_ATTRIBUTES
 	m.AddAttribute(TAG_CHARSET, "attributes-charset", charset("utf-8"))
 	m.AddAttribute(TAG_LANGUAGE, "attributes-natural-language", naturalLanguage("en-us"))
 	m.AddAttribute(TAG_URI, "printer-uri", uri("ipp://"+c.uri+":631/printers/"+c.printername))
@@ -109,7 +110,23 @@ func (c *CupsServer) PrintTestPage(data []byte) {
 	m.Data = data
 
 	c.DoRequest(m)
-	
+	fmt.Println("get request ID:", m.GetRequestID())
+}
+
+func (c *CupsServer) GetJobStatus(jobUri string) {
+	m := c.CreateRequest(GET_JOB_ATTRIBUTES)
+	//GET_PRINTER_ATTRIBUTES
+	//GET_JOB_ATTRIBUTES
+	m.AddAttribute(TAG_CHARSET, "attributes-charset", charset("utf-8"))
+	m.AddAttribute(TAG_LANGUAGE, "attributes-natural-language", naturalLanguage("en-us"))
+	m.AddAttribute(TAG_URI, "printer-uri", uri("ipp://"+c.uri+":631/printers/"+c.printername))
+	m.AddAttribute(TAG_URI, "job-uri", uri("ipp://"+c.uri+":631/jobs/64"))
+	m.AddAttribute(TAG_INTEGER, "job-id", integer(int32(64)))
+	m.AddAttribute(TAG_KEYWORD, "requesting-user-name", keyword([]byte(c.username)))
+	//m.Data = data
+
+	c.DoRequest(m)
+	fmt.Println("get request ID:", m.GetRequestID())
 }
 
 func (c *CupsServer) DoRequest(m Message)(Message, error) {
@@ -175,6 +192,8 @@ func (c *CupsServer) DoRequest(m Message)(Message, error) {
 			}
 		}
 	}
+
+
 
 	//fmt.Println(x.attributeGroups[0].attributes[0].values)
 	//fmt.Println(x.attributeGroups[0].attributes[0].values[0].String())
