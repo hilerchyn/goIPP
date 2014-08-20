@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"log"
-	"encoding/hex"
+	//"encoding/hex"
 	utility "goIPP/utils"
 )
 
@@ -191,12 +191,12 @@ func splitAValues(b []byte) (ags []attributeGroup) {
 			log.Println(vTag)
 			//hex.Dump(vTag)
 			log.Println(value)
-			hex.Dump(value)
+			//hex.Dump(value)
 			av, _ := UnMarshallattribute(vTag, value) //returns attributeValue
 			av.name = name
 			av.nameLength = nLength
 			v.appendValue(av)
-			continue
+			//continue
 		} else if nLength == 0 {
 			x, err = util.GetNextN(2)
 			buf := bytes.NewBuffer(x)
@@ -215,11 +215,11 @@ func splitAValues(b []byte) (ags []attributeGroup) {
 			av, _ := UnMarshallattribute(vTag, value)
 			av.name = ""
 			v.appendValue(av)
-			continue
+			//continue
 		}
 
 		ag.attributes = append(ag.attributes, v)
-		ags = append(ags, ag)
+		//ags = append(ags, ag)
 	}
 	ags = append(ags, ag)
 	return
@@ -265,14 +265,16 @@ func checkGroupTag(b byte) (status string, err bool) {
 //	bi = value tag as byte; bts = value as []byte
 func UnMarshallattribute(bi byte, bts []byte) (attributeValue, error) {
 	var a attributeValue
-	// a.value = bts
+	a.value = bts
+	//log.Println("Hiler Debug UnMarshallattribute:", bi)
 	switch bi {
 	case 0x21:
 		a.valueTag = TAG_INTEGER // integer
 		a.valueTagStr = "TAG_INTEGER"
 		a.Marshal = (func() ([]byte, error) { b := a.value.(integer); return b.MarshalIPP() })
-		a.UnMarshal = (func([]byte) error { b := a.value.(integer); return b.UnMarshalIPP(bts) })
-		a.Length = (func() uint16 { return uint16(4) })
+		a.UnMarshal = (func(bts []byte) error { var b integer; b.UnMarshalIPP(bts); a.value = b; return nil})
+		a.Length = (func() uint16 {return uint16(1) })
+		a.String = (func() string {x := a.value.(integer); return x.String()})
 	case 0x22:
 		a.valueTag = TAG_BOOLEAN // boolean
 		a.valueTagStr = "TAG_BOOLEAN"
@@ -382,7 +384,7 @@ func UnMarshallattribute(bi byte, bts []byte) (attributeValue, error) {
 	
 	}
 
-	log.Println("Hiler Debug:", bts)
+
 	a.UnMarshal(bts)
 	return a, nil
 }
