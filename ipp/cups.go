@@ -2,11 +2,14 @@ package ipp
 
 import (
 	"os"
+	//"io"
 	"fmt"
 	"net/http"
 	"io/ioutil"
 	"encoding/binary"
 	"bytes"
+	//"bufio"
+	//"code.google.com/p/go.net/html/charset"
 )
 
 type CupsServer struct {
@@ -14,6 +17,7 @@ type CupsServer struct {
 	username       string
 	password       string
 	requestCounter int32
+	printername	   string
 }
 
 type Response_Header struct {
@@ -36,6 +40,20 @@ type Attribute_Name_Length struct {
 func (c *CupsServer) SetServer(server string) {
 	c.uri = server
 }
+
+func (c *CupsServer) SetServerUserName(name string) {
+	c.username = name
+}
+
+func (c *CupsServer) SetServerUserPassword(password string) {
+	c.password = password
+}
+
+
+func (c *CupsServer) SetPrinterName(name string) {
+	c.printername = name
+}
+
 
 func (c *CupsServer) CreateRequest(operationId uint16) Message {
 	m := newMessage(operationId)
@@ -82,16 +100,14 @@ func (c *CupsServer) GetPrinterAttributes() {
 	
 }
 
-func (c *CupsServer) PrintTestPage() {
-	m := c.CreateRequest(PAUSE_PRINTER)
+func (c *CupsServer) PrintTestPage(data []byte) {
+	m := c.CreateRequest(PRINT_JOB)
 	m.AddAttribute(TAG_CHARSET, "attributes-charset", charset("utf-8"))
 	m.AddAttribute(TAG_LANGUAGE, "attributes-natural-language", naturalLanguage("en-us"))
-	m.AddAttribute(TAG_URI, "printer-uri", uri("ipp://"+c.uri+":631/printers/Canon_iP2700_series"))
+	m.AddAttribute(TAG_URI, "printer-uri", uri("ipp://"+c.uri+":631/printers/"+c.printername))
+	m.AddAttribute(TAG_KEYWORD, "requesting-user-name", keyword([]byte(c.username)))
+	m.Data = data
 
-	name := octetString{}
-	name.name = []byte("hilerchen")
-	name.value = []byte("hilerchen")
-	m.AddAttribute(TAG_NAMELANG, "requesting-user-name", nameWithLanguage(name))
 	c.DoRequest(m)
 	
 }
@@ -103,12 +119,16 @@ func (c *CupsServer) DoRequest(m Message)(Message, error) {
 	s := m.marshallMsg()
 	fii.Write(s.Bytes())
 	// "http://192.168.1.8:631/ipp/printer" "application/ipp"
-	
-	resp, err := http.Post("http://"+c.uri+":631/ipp/printer", "application/ipp", s)
+
+
+	//reader := bytes.NewReader(s.Bytes())
+
+
+	resp, err := http.Post("http://"+c.uri+":631/printers/"+c.printername, "application/ipp", s)
 	if err != nil {
 		fmt.Println("err: ",err)
 	}
-  body, errr := ioutil.ReadAll(resp.Body)
+  	body, errr := ioutil.ReadAll(resp.Body)
 	if errr != nil {
 		fmt.Println("errr:   ", errr)
 	}
