@@ -465,7 +465,9 @@ func (i *integer) MarshalIPP() ([]byte, error) {
 	return i.MarshalIPP()
 }
 
-func (i *integer) UnMarshalIPP([]byte) (error) {
+func (i *integer) UnMarshalIPP(b []byte) (error) {
+	x, _ := binary.Varint(b)
+	*i = integer(int32(x))
 	return nil
 }
 func (i *integer) String() string {

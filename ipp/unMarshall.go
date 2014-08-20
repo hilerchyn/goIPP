@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"log"
+	"encoding/hex"
 	utility "goIPP/utils"
 )
 
@@ -113,7 +114,7 @@ func splitAValues(b []byte) (ags []attributeGroup) {
 		vTag, err = util.GetNextOne() // get value tag
 		_, isDelimitter := checkGroupTag(vTag)
 
-		log.Println("Hiler Debug:",vTag)
+		log.Println("Hiler Debug vTag:",vTag)
 		if vTag == TAG_END {
 			continue
 		}
@@ -187,7 +188,10 @@ func splitAValues(b []byte) (ags []attributeGroup) {
 				log.Println("182 util.GetNextN(int(vLength)) vLength: ", vLength)
 				break
 			}
-
+			log.Println(vTag)
+			//hex.Dump(vTag)
+			log.Println(value)
+			hex.Dump(value)
 			av, _ := UnMarshallattribute(vTag, value) //returns attributeValue
 			av.name = name
 			av.nameLength = nLength
@@ -332,6 +336,13 @@ func UnMarshallattribute(bi byte, bts []byte) (attributeValue, error) {
 	case 0x42:
 		a.valueTag = TAG_NAME
 		a.valueTagStr = "TAG_NAME"
+		a.Marshal = (func() ([]byte, error) {b := a.value.(charset); return b.MarshalIPP()})
+		a.UnMarshal = (func(bts []byte) error {var b charset; b.UnMarshalIPP(bts); a.value = b; return nil})
+		a.Length = (func() uint16 {b := a.value.(charset); return uint16(b.len())})
+		a.String = (func() string {x := a.value.(charset); return x.String()})
+	case 0x45:
+		a.valueTag = TAG_URI // octetString with an  unspecified format
+		a.valueTagStr = "TAG_URI"
 		a.Marshal = (func() ([]byte, error) {b := a.value.(charset); return b.MarshalIPP()})
 		a.UnMarshal = (func(bts []byte) error {var b charset; b.UnMarshalIPP(bts); a.value = b; return nil})
 		a.Length = (func() uint16 {b := a.value.(charset); return uint16(b.len())})
