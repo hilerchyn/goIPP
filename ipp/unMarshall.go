@@ -5,7 +5,7 @@ import (
 	"encoding/binary"
 	"log"
 	//"encoding/hex"
-	utility "goIPP/utils"
+	utility "github.com/hilerchyn/goIPP/utils"
 )
 
 // message
