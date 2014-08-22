@@ -2,7 +2,7 @@ package ipp
 
 import (
 	"os"
-	//"io"
+	"log"
 	"fmt"
 	"net/http"
 	"io/ioutil"
@@ -123,7 +123,9 @@ func (c *CupsServer) SendPrintJob(data []byte)(Message, error) {
 	m.AddAttribute(TAG_KEYWORD, "requesting-user-name", keyword([]byte(c.username)))
 	m.Data = data
 
-	return c.DoRequest(m)
+	msg, err := c.DoRequest(m)
+
+	return msg, err
 	//fmt.Println("get request ID:", m.GetRequestID())
 }
 
