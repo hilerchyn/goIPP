@@ -18,6 +18,7 @@ type CupsServer struct {
 	password       string
 	requestCounter int32
 	printername	   string
+	Debug			bool
 }
 
 type Response_Header struct {
@@ -113,7 +114,7 @@ func (c *CupsServer) PrintTestPage(data []byte) {
 	fmt.Println("get request ID:", m.GetRequestID())
 }
 
-func (c *CupsServer) SendPrintJob(data []byte) {
+func (c *CupsServer) SendPrintJob(data []byte)(Message, error) {
 	m := c.CreateRequest(PRINT_JOB)
 	//GET_JOB_ATTRIBUTES
 	m.AddAttribute(TAG_CHARSET, "attributes-charset", charset("utf-8"))
@@ -122,8 +123,8 @@ func (c *CupsServer) SendPrintJob(data []byte) {
 	m.AddAttribute(TAG_KEYWORD, "requesting-user-name", keyword([]byte(c.username)))
 	m.Data = data
 
-	c.DoRequest(m)
-	fmt.Println("get request ID:", m.GetRequestID())
+	return c.DoRequest(m)
+	//fmt.Println("get request ID:", m.GetRequestID())
 }
 
 func (c *CupsServer) GetJobStatus(jobUri string) {
@@ -144,73 +145,67 @@ func (c *CupsServer) GetJobStatus(jobUri string) {
 
 func (c *CupsServer) DoRequest(m Message)(Message, error) {
 
-    fii, _ := os.Create("./printer/aC")
-	defer fii.Close()
 	s := m.marshallMsg()
-	fii.Write(s.Bytes())
-	// "http://192.168.1.8:631/ipp/printer" "application/ipp"
 
-
-	//reader := bytes.NewReader(s.Bytes())
-
+	if c.Debug {
+		fii, _ := os.Create("./printer/aC")
+		defer fii.Close()
+		fii.Write(s.Bytes())
+	}
 
 	resp, err := http.Post("http://"+c.uri+"/printers/"+c.printername, "application/ipp", s)
 	if err != nil {
-		fmt.Println("err: ",err)
+		log.Println("[IPP/CUPS]err: ",err)
 	}
   	body, errr := ioutil.ReadAll(resp.Body)
 	if errr != nil {
-		fmt.Println("errr:   ", errr)
+		log.Println("[IPP/CUPS]errr: ", errr)
 	}
-  fmt.Println("Response Body: ", string(body))
-  //fmt.Println("Response Body bytes[]: ", body)
-  fmt.Println("End Tag: ", TAG_END)
-  fmt.Println("Header: ", resp.Header)
 
-	/*****************************************/
-	var data_header = Response_Header{}
-	binary.Read(bytes.NewReader(body),binary.BigEndian,&data_header)
-	//fmt.Println("Response Header:", data_header)
+	if c.Debug {
+		fmt.Println("Response Body: ", string(body))
+		//fmt.Println("Response Body bytes[]: ", body)
+		fmt.Println("End Tag: ", TAG_END)
+		fmt.Println("Header: ", resp.Header)
 
-	var data_tag uint8
-	binary.Read(bytes.NewReader(body[8:]),binary.BigEndian,&data_tag)
-	//fmt.Println("Response Body tag:", data_tag)
 
-	var attrib_header = Attribute_Header{}
-	binary.Read(bytes.NewReader(body[8+1:]),binary.BigEndian,&attrib_header)
-	//fmt.Println("Attribute Header:", attrib_header)
+		/*****************************************/
+		var data_header = Response_Header{}
+		binary.Read(bytes.NewReader(body), binary.BigEndian, &data_header)
+		//fmt.Println("Response Header:", data_header)
 
-	var name_len = Attribute_Name_Length{}
-	binary.Read(bytes.NewReader(body[8+1+5:]),binary.BigEndian,&name_len)
-	//fmt.Println("Attribute Name Length:", name_len)
+		var data_tag uint8
+		binary.Read(bytes.NewReader(body[8:]), binary.BigEndian, &data_tag)
+		//fmt.Println("Response Body tag:", data_tag)
 
-	count := 8+1+5
-	for count < len(body) {
-		count = count + 3
+		var attrib_header = Attribute_Header{}
+		binary.Read(bytes.NewReader(body[8+1:]), binary.BigEndian, &attrib_header)
+		//fmt.Println("Attribute Header:", attrib_header)
 
-		//binary.Read(bytes.NewReader(body[count:]),binary.BigEndian,&name_len)
+		var name_len = Attribute_Name_Length{}
+		binary.Read(bytes.NewReader(body[8+1+5:]), binary.BigEndian, &name_len)
 		//fmt.Println("Attribute Name Length:", name_len)
-	}
 
+		count := 8 + 1 + 5
+		for count < len(body) {
+			count = count+3
 
-
-  	x, eerr := ParseMessage(body)
-
-
-
-	for _, ag := range x.attributeGroups {
-		for _, ab := range ag.attributes {
-			for _, val := range ab.values {
-				fmt.Println(val.name, "<->", val.valueTagStr, "<->", val.String())
-			}
+			//binary.Read(bytes.NewReader(body[count:]),binary.BigEndian,&name_len)
+			//fmt.Println("Attribute Name Length:", name_len)
 		}
 	}
 
+  	x, eerr := ParseMessage(body)
 
-
-	//fmt.Println(x.attributeGroups[0].attributes[0].values)
-	//fmt.Println(x.attributeGroups[0].attributes[0].values[0].String())
-  	//fmt.Println("Message: ", x.attributeGroups[1].attributes[0], len(x.attributeGroups[1].attributes[0].values), "eerr: ", eerr)
+	if c.Debug {
+		for _, ag := range x.attributeGroups {
+			for _, ab := range ag.attributes {
+				for _, val := range ab.values {
+					fmt.Println(val.name, "<->", val.valueTagStr, "<->", val.String())
+				}
+			}
+		}
+	}
 
 	return x, eerr
 
