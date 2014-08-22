@@ -105,7 +105,20 @@ func (c *CupsServer) PrintTestPage(data []byte) {
 	//GET_JOB_ATTRIBUTES
 	m.AddAttribute(TAG_CHARSET, "attributes-charset", charset("utf-8"))
 	m.AddAttribute(TAG_LANGUAGE, "attributes-natural-language", naturalLanguage("en-us"))
-	m.AddAttribute(TAG_URI, "printer-uri", uri("ipp://"+c.uri+":631/printers/"+c.printername))
+	m.AddAttribute(TAG_URI, "printer-uri", uri("ipp://"+c.uri+"/printers/"+c.printername))
+	m.AddAttribute(TAG_KEYWORD, "requesting-user-name", keyword([]byte(c.username)))
+	m.Data = data
+
+	c.DoRequest(m)
+	fmt.Println("get request ID:", m.GetRequestID())
+}
+
+func (c *CupsServer) SendPrintJob(data []byte) {
+	m := c.CreateRequest(PRINT_JOB)
+	//GET_JOB_ATTRIBUTES
+	m.AddAttribute(TAG_CHARSET, "attributes-charset", charset("utf-8"))
+	m.AddAttribute(TAG_LANGUAGE, "attributes-natural-language", naturalLanguage("en-us"))
+	m.AddAttribute(TAG_URI, "printer-uri", uri("ipp://"+c.uri+"/printers/"+c.printername))
 	m.AddAttribute(TAG_KEYWORD, "requesting-user-name", keyword([]byte(c.username)))
 	m.Data = data
 
@@ -119,8 +132,8 @@ func (c *CupsServer) GetJobStatus(jobUri string) {
 	//GET_JOB_ATTRIBUTES
 	m.AddAttribute(TAG_CHARSET, "attributes-charset", charset("utf-8"))
 	m.AddAttribute(TAG_LANGUAGE, "attributes-natural-language", naturalLanguage("en-us"))
-	m.AddAttribute(TAG_URI, "printer-uri", uri("ipp://"+c.uri+":631/printers/"+c.printername))
-	m.AddAttribute(TAG_URI, "job-uri", uri("ipp://"+c.uri+":631/jobs/64"))
+	m.AddAttribute(TAG_URI, "printer-uri", uri("ipp://"+c.uri+"/printers/"+c.printername))
+	m.AddAttribute(TAG_URI, "job-uri", uri("ipp://"+c.uri+"/jobs/64"))
 	m.AddAttribute(TAG_INTEGER, "job-id", integer(int32(64)))
 	m.AddAttribute(TAG_KEYWORD, "requesting-user-name", keyword([]byte(c.username)))
 	//m.Data = data
@@ -141,7 +154,7 @@ func (c *CupsServer) DoRequest(m Message)(Message, error) {
 	//reader := bytes.NewReader(s.Bytes())
 
 
-	resp, err := http.Post("http://"+c.uri+":631/printers/"+c.printername, "application/ipp", s)
+	resp, err := http.Post("http://"+c.uri+"/printers/"+c.printername, "application/ipp", s)
 	if err != nil {
 		fmt.Println("err: ",err)
 	}
