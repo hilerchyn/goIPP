@@ -85,11 +85,11 @@ func (c *CupsServer) GetPrinters()(Message, error) {
 	
 }
 
-func (c *CupsServer) GetPrinterAttributes() {
+func (c *CupsServer) GetPrinterAttributes()(Message, error) {
 	m := c.CreateRequest(GET_PRINTER_ATTRIBUTES)
 	m.AddAttribute(TAG_CHARSET, "attributes-charset", charset("utf-8"))
 	m.AddAttribute(TAG_LANGUAGE, "attributes-natural-language", naturalLanguage("en-us"))
-	m.AddAttribute(TAG_URI, "printer-uri", uri("ipp://"+c.uri+":631/printers/"+c.printername))
+	m.AddAttribute(TAG_URI, "printer-uri", uri("ipp://"+c.uri+"/printers/"+c.printername))
 	
 	a := NewAttribute()
 	a.AddValue(TAG_KEYWORD, "requested-attributes", keyword("copies-supported"))
@@ -101,8 +101,12 @@ func (c *CupsServer) GetPrinterAttributes() {
 	
 	m.AppendAttribute(a)
 	
-	c.DoRequest(m)
-	
+	msg, err := c.DoRequest(m)
+
+	//c.getMessageByKey(msg, "")
+
+	return msg, err
+
 }
 
 func (c *CupsServer) PrintTestPage(data []byte) {
@@ -189,6 +193,88 @@ func (c *CupsServer) GetJobID(msg Message) (uint32, bool) {
 	return uint32(jobID), err
 }
 
+/*
+get printer state
+ */
+func (c *CupsServer) GetPrinterState(msg Message) (uint32, bool) {
+	err := true
+	var jobID uint64
+
+	for _, ag := range msg.attributeGroups {
+		for _, ab := range ag.attributes {
+			for _, val := range ab.values {
+
+				if string(val.name) == string("printer-state"){
+					err = false
+					tp,_ := strconv.Atoi(fmt.Sprintf("%d",val.value)) //strconv.ParseUint(fmt.Sprintf("%d",val.value), 10, 4)
+					jobID = uint64(tp)
+				}
+			}
+		}
+
+	}
+
+	return uint32(jobID), err
+}
+
+/*
+get printer state
+ */
+func (c *CupsServer) GetPrinterStateMsg(msg Message) (string, bool) {
+	err := true
+	var message string
+
+	for _, ag := range msg.attributeGroups {
+		for _, ab := range ag.attributes {
+			for _, val := range ab.values {
+
+				if string(val.name) == string("printer-state-message"){
+					err = false
+					//tp,_ := strconv.Atoi(fmt.Sprintf("%d",val.value)) //strconv.ParseUint(fmt.Sprintf("%d",val.value), 10, 4)
+					//jobID = uint64(tp)
+					message = val.String()
+				}
+			}
+		}
+
+	}
+
+	return message, err
+}
+
+/*
+get job ID
+ */
+func (c *CupsServer) GetJobState(msg Message) (uint32, bool) {
+	err := true
+	var jobID uint64
+
+	for gi, ag := range msg.attributeGroups {
+		fmt.Println("*****",gi,"*****")
+		for _, ab := range ag.attributes {
+			for _, val := range ab.values {
+				switch val.valueTag{
+				case TAG_NAMELANG:
+					fmt.Println(val.name, "<->", val.valueTagStr, "<->", val.String())
+				case TAG_INTEGER:
+					fmt.Println(val.name, "<->", val.valueTagStr, "<->", val.value)
+				case TAG_URI:
+					fmt.Println(val.name, "<->", val.valueTagStr, "<->", val.String())
+				case TAG_ENUM:
+					fmt.Println(val.name, "<->", val.valueTagStr, "<->", val.value)
+				default:
+					fmt.Println(val.name, "<->", val.valueTagStr, "<->", val.String())
+
+				}
+
+			}
+		}
+
+	}
+
+	return uint32(jobID), err
+}
+
 func (c *CupsServer) GetJobStatus(jobID uint32)(Message, error) {
 	m := c.CreateRequest(GET_JOB_ATTRIBUTES)
 	//GET_PRINTER_ATTRIBUTES
@@ -201,8 +287,18 @@ func (c *CupsServer) GetJobStatus(jobID uint32)(Message, error) {
 	m.AddAttribute(TAG_KEYWORD, "requesting-user-name", keyword([]byte(c.username)))
 	//m.Data = data
 
-	return c.DoRequest(m)
+	msg, err := c.DoRequest(m)
 	//fmt.Println("get request ID:", m.GetRequestID())
+
+	for _, ag := range msg.attributeGroups {
+		for _, ab := range ag.attributes {
+			for _, _ = range ab.values {
+				//fmt.Println(val.name, "<->", val.valueTagStr, "<->", val.String())
+			}
+		}
+	}
+
+	return msg, err
 }
 
 func (c *CupsServer) DoRequest(m Message)(Message, error) {
