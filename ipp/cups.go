@@ -243,33 +243,122 @@ func (c *CupsServer) GetPrinterStateMsg(msg Message) (string, bool) {
 }
 
 /*
+get printer state
+ */
+func (c *CupsServer) GetJobPrinterStateMsg(msg Message) (string, bool) {
+	err := true
+	var message string
+
+	for _, ag := range msg.attributeGroups {
+		for _, ab := range ag.attributes {
+			for _, val := range ab.values {
+
+				if string(val.name) == string("job-printer-state-message"){
+					err = false
+					//tp,_ := strconv.Atoi(fmt.Sprintf("%d",val.value)) //strconv.ParseUint(fmt.Sprintf("%d",val.value), 10, 4)
+					//jobID = uint64(tp)
+					message = val.String()
+				}
+			}
+		}
+
+	}
+
+	return message, err
+}
+
+func (c *CupsServer) GetJobTimeProcessing(msg Message) (uint32, bool) {
+	err := true
+	var jobID uint64
+
+	for _, ag := range msg.attributeGroups {
+		for _, ab := range ag.attributes {
+			for _, val := range ab.values {
+
+				if string(val.name) == string("time-at-processing"){
+					err = false
+					tp,_ := strconv.Atoi(fmt.Sprintf("%d",val.value)) //strconv.ParseUint(fmt.Sprintf("%d",val.value), 10, 4)
+					jobID = uint64(tp)
+				}
+			}
+		}
+
+	}
+
+
+	if c.Debug {
+		for gi, ag := range msg.attributeGroups {
+			fmt.Println("*****", gi, "*****")
+			for _, ab := range ag.attributes {
+				for _, val := range ab.values {
+					switch val.valueTag{
+					case TAG_NAMELANG:
+						fmt.Println(val.name, "<->", val.valueTagStr, "<->", val.String())
+					case TAG_INTEGER:
+						fmt.Println(val.name, "<->", val.valueTagStr, "<->", val.value)
+					case TAG_URI:
+						fmt.Println(val.name, "<->", val.valueTagStr, "<->", val.String())
+					case TAG_ENUM:
+						fmt.Println(val.name, "<->", val.valueTagStr, "<->", val.value)
+					default:
+						fmt.Println(val.name, "<->", val.valueTagStr, "<->", val.String())
+
+					}
+
+				}
+			}
+
+		}
+	}
+
+	return uint32(jobID), err
+}
+
+/*
 get job ID
  */
 func (c *CupsServer) GetJobState(msg Message) (uint32, bool) {
 	err := true
 	var jobID uint64
 
-	for gi, ag := range msg.attributeGroups {
-		fmt.Println("*****",gi,"*****")
+	for _, ag := range msg.attributeGroups {
 		for _, ab := range ag.attributes {
 			for _, val := range ab.values {
-				switch val.valueTag{
-				case TAG_NAMELANG:
-					fmt.Println(val.name, "<->", val.valueTagStr, "<->", val.String())
-				case TAG_INTEGER:
-					fmt.Println(val.name, "<->", val.valueTagStr, "<->", val.value)
-				case TAG_URI:
-					fmt.Println(val.name, "<->", val.valueTagStr, "<->", val.String())
-				case TAG_ENUM:
-					fmt.Println(val.name, "<->", val.valueTagStr, "<->", val.value)
-				default:
-					fmt.Println(val.name, "<->", val.valueTagStr, "<->", val.String())
 
+				if string(val.name) == string("job-state"){
+					err = false
+					tp,_ := strconv.Atoi(fmt.Sprintf("%d",val.value)) //strconv.ParseUint(fmt.Sprintf("%d",val.value), 10, 4)
+					jobID = uint64(tp)
 				}
-
 			}
 		}
 
+	}
+
+
+	if c.Debug {
+		for gi, ag := range msg.attributeGroups {
+			fmt.Println("*****", gi, "*****")
+			for _, ab := range ag.attributes {
+				for _, val := range ab.values {
+					switch val.valueTag{
+					case TAG_NAMELANG:
+						fmt.Println(val.name, "<->", val.valueTagStr, "<->", val.String())
+					case TAG_INTEGER:
+						fmt.Println(val.name, "<->", val.valueTagStr, "<->", val.value)
+					case TAG_URI:
+						fmt.Println(val.name, "<->", val.valueTagStr, "<->", val.String())
+					case TAG_ENUM:
+						fmt.Println(val.name, "<->", val.valueTagStr, "<->", val.value)
+					default:
+						fmt.Println(val.name, "<->", val.valueTagStr, "<->", val.String())
+
+					}
+
+				}
+			}
+
+		}
 	}
 
 	return uint32(jobID), err
@@ -292,8 +381,20 @@ func (c *CupsServer) GetJobStatus(jobID uint32)(Message, error) {
 
 	for _, ag := range msg.attributeGroups {
 		for _, ab := range ag.attributes {
-			for _, _ = range ab.values {
-				//fmt.Println(val.name, "<->", val.valueTagStr, "<->", val.String())
+			for _, val := range ab.values {
+				switch val.valueTag{
+				case TAG_NAMELANG:
+					fmt.Println(val.name, "<->", val.valueTagStr, "<->", val.String())
+				case TAG_INTEGER:
+					fmt.Println(val.name, "<->", val.valueTagStr, "<->", val.value)
+				case TAG_URI:
+					fmt.Println(val.name, "<->", val.valueTagStr, "<->", val.String())
+				case TAG_ENUM:
+					fmt.Println(val.name, "<->", val.valueTagStr, "<->", val.value)
+				default:
+					fmt.Println(val.name, "<->", val.valueTagStr, "<->", val.String())
+
+				}
 			}
 		}
 	}
@@ -312,6 +413,9 @@ func (c *CupsServer) DoRequest(m Message)(Message, error) {
 	}
 
 	resp, err := http.Post("http://"+c.uri+"/printers/"+c.printername, "application/ipp", s)
+
+	defer resp.Body.Close()
+
 	if err != nil {
 		log.Println("[IPP/CUPS]err: ",err)
 	}
