@@ -6,6 +6,7 @@ import (
 	"log"
 	//"encoding/hex"
 	utility "github.com/hilerchyn/goIPP/utils"
+
 )
 
 // message
@@ -114,7 +115,6 @@ func splitAValues(b []byte) (ags []attributeGroup) {
 		vTag, err = util.GetNextOne() // get value tag
 		_, isDelimitter := checkGroupTag(vTag)
 
-		log.Println("Hiler Debug vTag:",vTag)
 		if vTag == TAG_END {
 			continue
 		}
@@ -167,7 +167,8 @@ func splitAValues(b []byte) (ags []attributeGroup) {
 				var nv attribute
 				v = nv // reset the attribute
 			}
-			n, err := util.GetNextN(int(nLength)) // Start of new Attribute, if cnt > 1 then it is not the first run and we need to append 
+			n, err := util.GetNextN(int(nLength)) // Start of new Attribute, if cnt > 1 then it is not the first run and we need to append
+
 			name = string(n)
 			cnt.Plus() // increase av counter so we know that the next time nLength != 0 it is a new av and not the first one
 			if !err {
@@ -266,7 +267,6 @@ func checkGroupTag(b byte) (status string, err bool) {
 func UnMarshallattribute(bi byte, bts []byte) (attributeValue, error) {
 	var a attributeValue
 	a.value = bts
-	log.Println("Hiler Debug UnMarshallattribute:", bi)
 	switch bi {
 	case 0x13:
 		a.valueTag = TAG_NOVALUE // octetString with an  unspecified format
@@ -279,7 +279,7 @@ func UnMarshallattribute(bi byte, bts []byte) (attributeValue, error) {
 		a.valueTag = TAG_INTEGER // integer
 		a.valueTagStr = "TAG_INTEGER"
 		a.Marshal = (func() ([]byte, error) { b := a.value.(integer); return b.MarshalIPP() })
-		a.UnMarshal = (func(bts []byte) error { var b integer; b.UnMarshalIPP(bts); a.value = b; return nil})
+		a.UnMarshal = (func(bts []byte) error {  var b integer; b.UnMarshalIPP(bts); a.value = b; return nil})
 		a.Length = (func() uint16 {return uint16(1) })
 		a.String = (func() string {x := a.value.(integer); return x.String()})
 	case 0x22:
