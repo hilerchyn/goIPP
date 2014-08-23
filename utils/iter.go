@@ -2,8 +2,8 @@ package utils
 
 import (
 	"log"
-	"fmt"
-	"encoding/hex"
+	_ "fmt"
+	_ "encoding/hex"
 )
 
 type iterator struct {
@@ -29,10 +29,10 @@ func (i *iterator) DeBug() {
 }
 
 func (i *iterator) deBug() {
-	b := i.srcIn[i.mark:]
-	xx := hex.Dump(b)
+	//b := i.srcIn[i.mark:]
+	//xx := hex.Dump(b)
 	log.Println("DeBug interator current state: Mark: ", i.mark, "End Mark: ", i.markEnd, "Bytes Remaining: ", i.bRemaining)
-	fmt.Println(xx)
+	//fmt.Println(xx)
 	i.dBug = false
 	return
 }
@@ -47,7 +47,7 @@ func (i *iterator) GetNextOne() (byte, bool) {
 		i.bRemaining -= 1
 		var ff []byte
 		ff = append(ff, f)
-		fmt.Println(hex.Dump(ff))
+		//fmt.Println(hex.Dump(ff))
 		return f, true
 	} else if i.mark+1 > i.markEnd {
 		log.Println("exceeds markEnd")
@@ -65,7 +65,7 @@ func (i *iterator) GetNextN(it int) ([]byte, bool) {
 		i.mark += it
 		i.bRemaining -= it	
 		
-		fmt.Println(hex.Dump(i.srcIn[markIn:i.mark]))
+		//fmt.Println(hex.Dump(i.srcIn[markIn:i.mark]))
 			
 		return i.srcIn[markIn:i.mark], true
 	} else {
@@ -77,7 +77,7 @@ func (i *iterator) GetNextN(it int) ([]byte, bool) {
 			i.mark += it
 			i.bRemaining -= it	
 			
-			fmt.Println(hex.Dump(i.srcIn[markIn:i.mark]))
+			//fmt.Println(hex.Dump(i.srcIn[markIn:i.mark]))
 					
 			return i.srcIn[markIn:i.mark], true
 		}

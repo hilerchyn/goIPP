@@ -111,7 +111,7 @@ func splitAValues(b []byte) (ags []attributeGroup) {
 		
 		one.Plus()
 		log.Println("Loop number: ", one.Get(), ag.beginAttributeGroupTag, len(ags))
-		util.DeBug()
+		//util.DeBug()
 		vTag, err = util.GetNextOne() // get value tag
 		_, isDelimitter := checkGroupTag(vTag)
 
@@ -183,7 +183,7 @@ func splitAValues(b []byte) (ags []attributeGroup) {
 				log.Println("177: ", er)
 				break
 			}
-			util.DeBug()
+			//util.DeBug()
 			value, err := util.GetNextN(int(vLength)) // value
 			if !err {
 				log.Println("182 util.GetNextN(int(vLength)) vLength: ", vLength)
