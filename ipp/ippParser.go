@@ -466,13 +466,15 @@ func (i *integer) MarshalIPP() ([]byte, error) {
 }
 
 func (i *integer) UnMarshalIPP(b []byte) (error) {
-	//x, _ := binary.Varint(b)
-	var y signedInteger
-	y.UnMarshall(b)
-	*i = integer(y)
+	var val uint32;
+	buf:=bytes.NewBuffer(b);
+	binary.Read(buf, binary.BigEndian, &val);
+
+	*i = integer(val)
 	return nil
 }
 func (i *integer) String() string {
+
 	return string(*i)
 }
 // ========== enum ==========
@@ -484,8 +486,10 @@ func (e *enum) MarshalIPP() ([]byte, error) {
 }
 
 func (e *enum) UnMarshalIPP(b []byte) (error) {
-	lb, _ := binary.Varint(b)
-	*e = enum(lb)
+	var val uint32;
+	buf:=bytes.NewBuffer(b);
+	binary.Read(buf, binary.BigEndian, &val);
+	*e = enum(val)
 	return nil
 }
 
