@@ -68,7 +68,7 @@ func ParseMessage(b []byte) (m Message, err error) {
 	iii, _ := binary.Varint(b[4:8]) //	request-id 					4 bytes  	- required	
 	m.requestId = int32(iii)
 	//et := bytes.IndexByte(b[8:], TAG_END)
-	log.Println("message:", m)
+	//log.Println("message:", m)
 	ags := splitAValues(b[8:]) //et+9]) //	attribute-group				n bytes 	- 0 or more
 
 	m.attributeGroups = ags
@@ -110,7 +110,7 @@ func splitAValues(b []byte) (ags []attributeGroup) {
 	for vTag != TAG_END { // parse atribute groups (b []byte) until TAG_END is reached
 		
 		one.Plus()
-		log.Println("Loop number: ", one.Get(), ag.beginAttributeGroupTag, len(ags))
+		//log.Println("Loop number: ", one.Get(), ag.beginAttributeGroupTag, len(ags))
 		//util.DeBug()
 		vTag, err = util.GetNextOne() // get value tag
 		_, isDelimitter := checkGroupTag(vTag)
@@ -189,9 +189,9 @@ func splitAValues(b []byte) (ags []attributeGroup) {
 				log.Println("182 util.GetNextN(int(vLength)) vLength: ", vLength)
 				break
 			}
-			log.Println(vTag)
+			//log.Println(vTag)
 			//hex.Dump(vTag)
-			log.Println(value)
+			//log.Println(value)
 			//hex.Dump(value)
 			av, _ := UnMarshallattribute(vTag, value) //returns attributeValue
 			av.name = name

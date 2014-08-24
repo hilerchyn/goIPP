@@ -379,6 +379,7 @@ func (c *CupsServer) GetJobStatus(jobID uint32)(Message, error) {
 	msg, err := c.DoRequest(m)
 	//fmt.Println("get request ID:", m.GetRequestID())
 
+	/*
 	for _, ag := range msg.attributeGroups {
 		for _, ab := range ag.attributes {
 			for _, val := range ab.values {
@@ -398,6 +399,7 @@ func (c *CupsServer) GetJobStatus(jobID uint32)(Message, error) {
 			}
 		}
 	}
+	*/
 
 	return msg, err
 }
